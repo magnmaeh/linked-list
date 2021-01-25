@@ -16,51 +16,58 @@ struct node_##type \
     type *data; \
 }; \
 
-#define LINKED_LIST_GENERIC_DECLARE_LOCAL_HEAD(type) \
-struct node_##type **_##type##_head = NULL; \
+#define LINKED_LIST_GENERIC_DEFINE_META(type) \
+struct meta_##type \
+{ \
+    struct node_##type **ref; \
+    void (*free_function)(void*); \
+    void (*deepcopy)(type*, const type*); \
+    unsigned char (*cmp_lt)(const type*, const type*); \
+    unsigned char length; \
+}; \
+
 
 #define LINKED_LIST_GENERIC_DECLARE_INITIALIZE(type) \
-struct node_##type** linked_list_##type##_initialize(); \
+struct meta_##type linked_list_##type##_initialize(); \
 
 #define LINKED_LIST_GENERIC_DECLARE_INSERT_SORTED(type) \
-unsigned char linked_list_##type##_insert_sorted(type* new_data, unsigned char (*cmp_lt_func)(const type *, const type *)); \
+unsigned char linked_list_##type##_insert_sorted(struct meta_##type *meta, type* new_data); \
 
 #define LINKED_LIST_GENERIC_DECLARE_PUSH(type) \
-unsigned char linked_list_##type##_push(type* new_data); \
+unsigned char linked_list_##type##_push(struct meta_##type *meta, type* new_data); \
 
 #define LINKED_LIST_GENERIC_DECLARE_APPEND(type) \
-unsigned char linked_list_##type##_append(type* new_data);
+unsigned char linked_list_##type##_append(struct meta_##type *meta, type* new_data);
 
 #define LINKED_LIST_GENERIC_DECLARE_INSERT_AFTER(type) \
-unsigned char linked_list_##type##_insert_after(type* new_data, const unsigned char pos); \
+unsigned char linked_list_##type##_insert_after(struct meta_##type *meta, type* new_data, const unsigned char pos); \
 
 #define LINKED_LIST_GENERIC_DECLARE_TRAVERSE(type) \
-unsigned char linked_list_##type##_traverse(unsigned char (*func)(struct node_##type *));
-
-#define LINKED_LIST_GENERIC_DECLARE_PRINT(type) \
-unsigned char linked_list_##type##_print(unsigned char (*printer)(struct node_##type *));
+unsigned char linked_list_##type##_traverse(struct meta_##type *meta, unsigned char (*func)(struct node_##type *));
 
 #define LINKED_LIST_GENERIC_DECLARE_PEEK(type) \
-type linked_list_##type##_peek(); \
+type linked_list_##type##_peek(struct meta_##type *meta); \
 
 #define LINKED_LIST_GENERIC_DECLARE_POP(type) \
-type linked_list_##type##_pop(); \
+type linked_list_##type##_pop(struct meta_##type *meta); \
 
 #define LINKED_LIST_GENERIC_DECLARE_GET_AT_POS(type) \
-type linked_list_##type##_get_at_pos(const unsigned char pos); \
+type linked_list_##type##_get_at_pos(struct meta_##type *meta, const unsigned char pos); \
 
 #define LINKED_LIST_GENERIC_DECLARE_GET_LENGTH(type) \
-unsigned char linked_list_##type##_get_length(); \
+unsigned char linked_list_##type##_get_length(struct meta_##type *meta); \
 
 #define LINKED_LIST_GENERIC_DECLARE_CREATE_NODE_MALLOC(type) \
-struct node_##type* linked_list_##type##_create_node_malloc(unsigned char (*setter_func)(struct node_##type*, type*), type* data); \
+struct node_##type* linked_list_##type##_create_node_malloc(type* data); \
 
 #define LINKED_LIST_GENERIC_DECLARE_SET_FREE_FUNC(type) \
-unsigned char linked_list_##type##_set_free_func(void (*free_func)(void*)); \
+unsigned char linked_list_##type##_set_free_func(struct meta_##type *meta, void (*free_func)(void*)); \
 
-#define LINKED_LIST_GENERIC_DECLARE_SET_LIST_INDEX(type) \
-unsigned char linked_list_##type##_set_list_index(const unsigned char new_index);
+#define LINKED_LIST_GENERIC_DECLARE_SET_DEEPCOPY_FUNC(type) \
+unsigned char linked_list_##type##_set_deepcopy_func(struct meta_##type *meta, void (*deepcopy_func)(type*, const type*)); \
 
+#define LINKED_LIST_GENERIC_DECLARE_SET_CMP_LT_FUNC(type) \
+unsigned char linked_list_##type##_set_cmp_lt_func(struct meta_##type *meta, unsigned char (*cmp_lt_func)(const type*, const type*)); \
 
 #define LINKED_LIST_GENERIC_DECLARE_ALL(type) \
 LINKED_LIST_GENERIC_DECLARE_INITIALIZE(type) \
@@ -69,16 +76,14 @@ LINKED_LIST_GENERIC_DECLARE_PUSH(type) \
 LINKED_LIST_GENERIC_DECLARE_APPEND(type) \
 LINKED_LIST_GENERIC_DECLARE_INSERT_AFTER(type) \
 LINKED_LIST_GENERIC_DECLARE_TRAVERSE(type) \
-LINKED_LIST_GENERIC_DECLARE_PRINT(type) \
 LINKED_LIST_GENERIC_DECLARE_PEEK(type) \
 LINKED_LIST_GENERIC_DECLARE_POP(type) \
 LINKED_LIST_GENERIC_DECLARE_GET_AT_POS(type) \
 LINKED_LIST_GENERIC_DECLARE_GET_LENGTH(type) \
 LINKED_LIST_GENERIC_DECLARE_CREATE_NODE_MALLOC(type) \
 LINKED_LIST_GENERIC_DECLARE_SET_FREE_FUNC(type) \
-LINKED_LIST_GENERIC_DECLARE_SET_LIST_INDEX(type) \
+LINKED_LIST_GENERIC_DECLARE_SET_DEEPCOPY_FUNC(type) \
+LINKED_LIST_GENERIC_DECLARE_SET_CMP_LT_FUNC(type) \
 
-LINKED_LIST_GENERIC_DEFINE_NODE(my_struct)
-LINKED_LIST_GENERIC_DECLARE_ALL(my_struct)
 
 #endif // LINKED_LIST_DECLARATIONS_H

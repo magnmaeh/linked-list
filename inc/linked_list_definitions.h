@@ -8,270 +8,327 @@
 #include "errors.h"
 
 #define LINKED_LIST_GENERIC_DEFINE_INITIALIZE(type) \
-struct node_##type** linked_list_##type##_initialize() \
+struct meta_##type linked_list_##type##_initialize() \
 { \
-    struct node_##type **head = (struct node_##type **)linked_list_##type##_create_node_malloc(NULL, NULL); \
-    _##type##_head[_list_index] = head; \
-    return _##type##_head[_list_index]; \
+    struct node_##type **ref = (struct node_##type **) linked_list_##type##_create_node_malloc(NULL); \
+    struct meta_##type meta = { .ref = ref, .length = 0 }; \
+    return meta; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_INSERT_SORTED(type) \
-unsigned char linked_list_##type##_insert_sorted(type* new_data, unsigned char (*cmp_lt_func)(const type*, const type *)) \
+unsigned char linked_list_##type##_insert_sorted(struct meta_##type *meta, type* new_data) \
 { \
-    if (new_data == NULL) \
+    if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (!new_data) \
     { \
         print_error("new_data was NULL.\n"); \
         return -EINVAL; \
     } \
  \
-    if (_linked_list_length[_list_index] == LINKED_LIST_MAX_LENGTH) \
+    else if (meta->length == LINKED_LIST_MAX_LENGTH) \
     { \
         print_error("Linked list full.\n"); \
         return -ENOBUF; \
     } \
  \
     /* No compare function provided */ \
-    if (cmp_lt_func == NULL) \
+    else if (!meta->cmp_lt) \
     { \
-        print_error("No compare function provided.\n"); \
+        print_error("meta has no cmp lt function.\n"); \
         return -EINVAL; \
     } \
  \
     /* Linked list length is zero, so just add the data in any way */ \
-    else if (_linked_list_length[_list_index] == 0) \
-        return linked_list_##type##_push(new_data); \
+    else if (meta->length == 0) \
+        return linked_list_##type##_push(meta, new_data); \
+ \
+    struct node_##type **ref = meta->ref; \
  \
     /* Compare function says this node should be first in linked list */ \
-    else if (!cmp_lt_func((*_##type##_head[_list_index])->data, new_data)) \
-        return linked_list_##type##_push(new_data); \
+    if (!meta->cmp_lt((*ref)->data, new_data)) \
+        return linked_list_##type##_push(meta, new_data); \
  \
     else \
     { \
         unsigned char pos = 0; \
-        struct node_##type *placeholder = *_##type##_head[_list_index]; \
-        struct node_##type *current_node = *_##type##_head[_list_index]; \
+        struct node_##type *placeholder = *ref; \
+        struct node_##type *current_node = *ref; \
  \
         while (current_node->next != NULL && current_node->next->data != NULL && \
-               cmp_lt_func(current_node->next->data, new_data)) \
+               meta->cmp_lt(current_node->next->data, new_data)) \
         { \
             current_node = current_node->next; \
+            if (pos == meta->length - 1) break; \
             pos++; \
         } \
-        *_##type##_head[_list_index] = placeholder; \
+        *ref = placeholder; \
  \
-        return linked_list_##type##_insert_after(new_data, pos); \
+        return linked_list_##type##_insert_after(meta, new_data, pos); \
     } \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_PUSH(type) \
-unsigned char linked_list_##type##_push(type* new_data) \
+unsigned char linked_list_##type##_push(struct meta_##type *meta, type *new_data) \
 { \
-    if (new_data == NULL) \
+    if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (!new_data) \
     { \
         print_error("new_data was NULL.\n"); \
         return -EINVAL; \
     } \
  \
-    if (_linked_list_length[_list_index] == LINKED_LIST_MAX_LENGTH) \
+    else if (meta->length == LINKED_LIST_MAX_LENGTH) \
     { \
         print_error("Linked list full.\n"); \
         return -ENOBUF; \
     } \
  \
-    struct node_##type *new_node = linked_list_##type##_create_node_malloc(NULL, NULL); \
-    new_node->data = new_data; \
-    new_node->next = (*_##type##_head[_list_index]); \
-    *_##type##_head[_list_index] = new_node; \
+    struct node_##type **ref = meta->ref; \
+    struct node_##type *new_node = linked_list_##type##_create_node_malloc(new_data); \
  \
-    _linked_list_length[_list_index]++; \
+    new_node->next = *ref; \
+    *ref = new_node; \
+    meta->length++; \
+ \
     return ENOERR; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_APPEND(type) \
-unsigned char linked_list_##type##_append(type* new_data) \
+unsigned char linked_list_##type##_append(struct meta_##type *meta, type *new_data) \
 { \
-    return linked_list_##type##_insert_after(new_data, _linked_list_length[_list_index] - 1); \
+    if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (!new_data) \
+    { \
+        print_error("new_data was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (meta->length == LINKED_LIST_MAX_LENGTH) \
+    { \
+        print_error("Linked list full.\n"); \
+        return -ENOBUF; \
+    } \
+ \
+    else if (meta->length == 0) \
+        return linked_list_##type##_push(meta, new_data); \
+ \
+    return linked_list_##type##_insert_after(meta, new_data, meta->length - 1); \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_INSERT_AFTER(type) \
-unsigned char linked_list_##type##_insert_after(type* new_data, const unsigned char pos) \
+unsigned char linked_list_##type##_insert_after(struct meta_##type *meta, type *new_data, const unsigned char pos) \
 { \
-    if (new_data == NULL) \
+    if (!meta) \
+    { \
+        printf("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (new_data == NULL) \
     { \
         print_error("new_data was NULL.\n"); \
         return -EINVAL; \
     } \
  \
     /* Bit of a hack */ \
-    if (_linked_list_length[_list_index] == 0) \
-        linked_list_##type##_push(new_data); \
+    else if (meta->length == 0) \
+        linked_list_##type##_push(meta, new_data); \
  \
-    if (pos >= _linked_list_length[_list_index]) \
+    else if (pos >= meta->length) \
     { \
-        print_error("pos > _linked_list_length[_list_index].\n"); \
+        print_error("pos > meta->length.\n"); \
         return -EINVAL; \
     } \
  \
-    if (_linked_list_length[_list_index] == LINKED_LIST_MAX_LENGTH) \
+    else if (meta->length == LINKED_LIST_MAX_LENGTH) \
     { \
         print_error("Linked list full.\n"); \
         return -ENOBUF; \
     } \
  \
-    struct node_##type *placeholder = *_##type##_head[_list_index]; \
-    struct node_##type *prev_node = *_##type##_head[_list_index]; \
+    struct node_##type **ref = meta->ref;\
+ \
+    struct node_##type *placeholder = *ref; \
+    struct node_##type *prev_node = *ref; \
  \
     for (unsigned char i = 0; i < pos; i++) \
         prev_node = prev_node->next; \
  \
-    struct node_##type *new_node = linked_list_##type##_create_node_malloc(NULL, NULL); \
-    new_node->data = new_data; \
+    struct node_##type *new_node = linked_list_##type##_create_node_malloc(new_data); \
     new_node->next = prev_node->next; \
     prev_node->next = new_node; \
  \
-    *_##type##_head[_list_index] = placeholder; \
-    _linked_list_length[_list_index]++; \
+    *ref = placeholder; \
+    meta->length++; \
  \
-    return 0; \
+    return ENOERR; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_TRAVERSE(type) \
-unsigned char linked_list_##type##_traverse(unsigned char (*func)(struct node_##type *)) \
+unsigned char linked_list_##type##_traverse(struct meta_##type *meta, unsigned char (*func)(struct node_##type *)) \
 { \
-    if (func == NULL) \
+    if (!func) \
     { \
         print_error("func passed was NULL.\n"); \
         return -EINVAL; \
     } \
  \
-    if (_##type##_head[_list_index] == NULL || *_##type##_head[_list_index] == NULL) \
+    else if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    struct node_##type **ref = meta->ref; \
+ \
+    if (meta->length == 0) \
     { \
         print_error("linked list empty.\n"); \
         return -ENOLIS; \
     } \
  \
-    struct node_##type* current_node = *_##type##_head[_list_index]; \
+    struct node_##type* current_node = *ref; \
  \
-    for (unsigned char i = 0; i < _linked_list_length[_list_index]; i++) \
+    for (unsigned char i = 0; i < meta->length; i++) \
     { \
+        printf("Call func on node %d with data %f\n", current_node, *current_node->data); \
         if (func(current_node)) \
         { \
             print_error("func passed returned an error.\n"); \
             return -EINVAL; \
         } \
  \
-        if (i == _linked_list_length[_list_index] - 1) break; \
+        if (i == meta->length - 1) break; \
  \
         current_node = current_node->next; \
     } \
     return ENOERR; \
 } \
 
-#define LINKED_LIST_GENERIC_DEFINE_PRINT(type) \
-unsigned char linked_list_##type##_print(unsigned char (*printer)(struct node_##type *)) \
+#define LINKED_LIST_GENERIC_DEFINE_PEEK(type) \
+type linked_list_##type##_peek(struct meta_##type *meta)  \
 { \
-    if (printer == NULL) \
+    if (!meta) \
     { \
-        print_error("printer passed was NULL.\n"); \
-        return -EINVAL; \
+        print_error("meta was NULL.\n"); \
+        type ret; \
+        return ret; \
     } \
  \
-    printf("Printing list %d\n", _list_index); \
-    return linked_list_##type##_traverse(printer); \
-} \
-
-#define LINKED_LIST_GENERIC_DEFINE_PEEK(type) \
-type linked_list_##type##_peek()  \
-{ \
-    if (_linked_list_length[_list_index] == 0) \
+    else if (meta->length == 0) \
     { \
         print_error("_linked_list_length[_list_index] = 0\n"); \
         type ret; \
         return ret; \
     } \
  \
-    return *(*_##type##_head[_list_index])->data; \
+    struct node_##type **ref = meta->ref; \
+    type *data = (*ref)->data; \
+ \
+    return *data; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_POP(type) \
-type linked_list_##type##_pop() \
+type linked_list_##type##_pop(struct meta_##type *meta) \
 { \
-    if (_linked_list_length[_list_index] == 0) \
+    if (!meta) \
     { \
-        print_error("_linked_list_length[_list_index] = 0.\n"); \
+        print_error("meta was NULL.\n"); \
         type ret; \
         return ret; \
     } \
  \
-    if (_##type##_head[_list_index] == NULL) \
+    else if (meta->length == 0) \
     { \
-        print_error("_head_ref == NULL.\n"); \
+        print_error("meta->length = 0.\n"); \
         type ret; \
         return ret; \
     } \
  \
-    if (*_##type##_head[_list_index] == NULL) \
+    struct node_##type **ref = meta->ref; \
+ \
+    if (meta->length == 0) \
     { \
-        print_error("_head_node == NULL.\n"); \
+        print_error("Linked list empty.\n"); \
         type ret; \
         return ret; \
     } \
  \
-    struct node_##type *temp = *_##type##_head[_list_index]; \
+    struct node_##type *temp = *ref; \
      \
     if (temp) \
-    { \
-         \
-        *_##type##_head[_list_index] = temp->next; \
-         \
-    } \
+        *ref = temp->next; \
  \
-    _free_function[_list_index](temp); \
-    _linked_list_length[_list_index]--; \
-    return *temp->data; \
+    type ret; \
+    meta->deepcopy(&ret, temp->data); \
+    meta->free_function(temp); \
+    meta->length--; \
+ \
+    return ret; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_GET_AT_POS(type) \
-type linked_list_##type##_get_at_pos(const unsigned char pos) \
+type linked_list_##type##_get_at_pos(struct meta_##type *meta, const unsigned char pos) \
 { \
-    if (pos >= _linked_list_length[_list_index]) \
+    if (pos >= meta->length) \
     { \
-        print_error("pos >= _linked_list_length[_list_index].\n"); \
+        print_error("pos >= meta->length\n"); \
         type ret; \
         return ret; \
     } \
  \
-    if (pos == 0) \
-    { \
-        return linked_list_##type##_pop(); \
-    } \
+    else if (pos == 0) \
+        return linked_list_##type##_pop(meta); \
  \
-    struct node_##type *placeholder = *_##type##_head[_list_index]; \
-    struct node_##type *current_node = *_##type##_head[_list_index]; \
+    struct node_##type **ref = meta->ref; \
+ \
+    struct node_##type *placeholder = *ref; \
+    struct node_##type *current_node = *ref; \
+ \
     for (unsigned char i = 0; i < pos - 1; i++) \
-    { \
         current_node = current_node->next; \
-    } \
  \
-    type ret = *current_node->next->data; \
     struct node_##type *temp = current_node->next; \
     current_node->next = current_node->next->next; \
-    *_##type##_head[_list_index] = placeholder; \
+    *ref = placeholder; \
  \
-    _free_function[_list_index](temp); \
-    _linked_list_length[_list_index]--; \
+    type ret; \
+    meta->deepcopy(&ret, temp->data); \
+    meta->free_function(temp); \
+    meta->length--; \
  \
     return ret; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_GET_LENGTH(type) \
-unsigned char linked_list_##type##_get_length() \
-{ \
-    return _linked_list_length[_list_index]; \
+unsigned char linked_list_##type##_get_length(struct meta_##type *meta) \
+{  \
+    if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    return meta->length; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_CREATE_NODE_MALLOC(type) \
-struct node_##type* linked_list_##type##_create_node_malloc(unsigned char (*setter_func)(struct node_##type*, type*), type* data) \
+struct node_##type* linked_list_##type##_create_node_malloc(type* data) \
 { \
     struct node_##type* new_node = malloc(sizeof(struct node_##type)); \
  \
@@ -280,42 +337,64 @@ struct node_##type* linked_list_##type##_create_node_malloc(unsigned char (*sett
         print_error("malloc() returned NULL.\n"); \
         return NULL; \
     } \
- \
-    if (setter_func != NULL) \
-    { \
-        if (setter_func(new_node, data)) \
-        { \
-            print_error("setter_func() provided returned an error.\n"); \
-            return NULL; \
-        } \
-    } \
+    new_node->data = data; \
  \
     return new_node; \
 } \
 
 #define LINKED_LIST_GENERIC_DEFINE_SET_FREE_FUNC(type) \
-unsigned char linked_list_##type##_set_free_func(void (*free_func)(void*)) \
+unsigned char linked_list_##type##_set_free_func(struct meta_##type *meta, void (*free_func)(void*)) \
 { \
-    if (free_func == NULL) \
+    if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (!free_func) \
     { \
         print_error("free_func() was NULL.\n"); \
         return -EINVAL; \
     } \
-    _free_function[_list_index] = free_func; \
+    meta->free_function = free_func; \
     return ENOERR; \
 } \
 
-#define LINKED_LIST_GENERIC_DEFINE_SET_LIST_INDEX(type) \
-unsigned char linked_list_##type##_set_list_index(const unsigned char new_index) \
+#define LINKED_LIST_GENERIC_DEFINE_SET_DEEPCOPY_FUNC(type) \
+unsigned char linked_list_##type##_set_deepcopy_func(struct meta_##type *meta, void (*deepcopy_func)(type*, const type*)) \
 { \
-    if (new_index < 0 || LINKED_LIST_MAX_LISTS < new_index) \
+    if (!meta) \
     { \
-        print_error("new_index out of range.\n"); \
+        print_error("meta was NULL.\n"); \
         return -EINVAL; \
     } \
  \
-    _list_index = new_index; \
+    else if (!deepcopy_func) \
+    { \
+        print_error("deepcopy func was NULL.\n"); \
+        return -EINVAL; \
+    } \
  \
+    meta->deepcopy = deepcopy_func; \
+    return ENOERR; \
+} \
+
+#define LINKED_LIST_GENERIC_DEFINE_SET_CMP_LT_FUNC(type) \
+unsigned char linked_list_##type##_set_cmp_lt_func(struct meta_##type *meta, unsigned char (*cmp_lt_func)(const type*, const type*)) \
+{ \
+    if (!meta) \
+    { \
+        print_error("meta was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    else if (!cmp_lt_func) \
+    { \
+        print_error("cmp lt func was NULL.\n"); \
+        return -EINVAL; \
+    } \
+ \
+    meta->cmp_lt = cmp_lt_func; \
     return ENOERR; \
 } \
 
@@ -326,13 +405,13 @@ LINKED_LIST_GENERIC_DEFINE_PUSH(type) \
 LINKED_LIST_GENERIC_DEFINE_APPEND(type) \
 LINKED_LIST_GENERIC_DEFINE_INSERT_AFTER(type) \
 LINKED_LIST_GENERIC_DEFINE_TRAVERSE(type) \
-LINKED_LIST_GENERIC_DEFINE_PRINT(type) \
 LINKED_LIST_GENERIC_DEFINE_PEEK(type) \
 LINKED_LIST_GENERIC_DEFINE_POP(type) \
 LINKED_LIST_GENERIC_DEFINE_GET_AT_POS(type) \
 LINKED_LIST_GENERIC_DEFINE_GET_LENGTH(type) \
 LINKED_LIST_GENERIC_DEFINE_CREATE_NODE_MALLOC(type) \
 LINKED_LIST_GENERIC_DEFINE_SET_FREE_FUNC(type) \
-LINKED_LIST_GENERIC_DEFINE_SET_LIST_INDEX(type) \
+LINKED_LIST_GENERIC_DEFINE_SET_DEEPCOPY_FUNC(type) \
+LINKED_LIST_GENERIC_DEFINE_SET_CMP_LT_FUNC(type) \
 
 #endif // LINKED_LIST_DEFINITIONS_H
