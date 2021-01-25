@@ -63,7 +63,9 @@ or perhaps
 LINKED_LIST_GENERIC_DEFINE_ALL(double)
 ```
 
-For a more detailed description, see the 'examples' folder.
+This will give you access to all the functions mentioned above. To get only a selection of them, you may call the macros specific to those functions individually. Note that you must provide some functions to the module, such as a function to free your struct, one to deepcopy the contents of your struct to another, and optionally a function to compare your structed for use in the insert_sorted() function.
+
+The reader is highly reccommended to view the steps shown in the 'examples' folder for more detailed description of use.
 
 ### Implementation details
 The following shows an easy example of how a struct, function declaration, and function definition can be implemented using the C preprocessor.
