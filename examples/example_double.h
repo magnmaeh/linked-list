@@ -11,7 +11,7 @@
 LINKED_LIST_GENERIC_DEFINE_NODE(double)
 
 // Step 4. Define a meta (which acts as a read-only handle for your linked list)
-LINKED_LIST_GENERIC_DEFINE_META(double)
+LINKED_LIST_GENERIC_DEFINE_HANDLE(double)
 
 // Step 5. Declare all functions associated with the linked list
 LINKED_LIST_GENERIC_DECLARE_ALL(double)

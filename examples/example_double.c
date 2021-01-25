@@ -43,8 +43,8 @@ int double_test()
     /*** Initialization sequence begin ***/
 
     // Step 1. Initialize and save the handle the function returns
-    struct meta_double handle = linked_list_double_initialize();
-    struct meta_double *h = &handle;
+    struct handle_double handle = linked_list_double_initialize();
+    struct handle_double *h = &handle;
     
     // Step 2. Set the handle's 'free()' and 'deepcopy()' with designated functions
     linked_list_double_set_free_func(h, _double_free);
@@ -204,8 +204,8 @@ int double_test()
     linked_list_double_traverse(h, _print_node);
 
 
-    struct meta_double handle2 = linked_list_double_initialize();
-    struct meta_double *h2 = &handle2;
+    struct handle_double handle2 = linked_list_double_initialize();
+    struct handle_double *h2 = &handle2;
     
     linked_list_double_set_free_func(h2, _double_free);
     linked_list_double_set_deepcopy_func(h2, _double_deepcopy);

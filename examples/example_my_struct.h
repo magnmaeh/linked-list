@@ -16,7 +16,7 @@ typedef struct my_struct
 LINKED_LIST_GENERIC_DEFINE_NODE(my_struct_t)
 
 // Step 4. Define a meta (which acts as a read-only handle for your linked list)
-LINKED_LIST_GENERIC_DEFINE_META(my_struct_t)
+LINKED_LIST_GENERIC_DEFINE_HANDLE(my_struct_t)
 
 // Step 5. Declare all functions associated with the linked list
 LINKED_LIST_GENERIC_DECLARE_ALL(my_struct_t)

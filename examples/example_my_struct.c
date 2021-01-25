@@ -45,8 +45,8 @@ int my_struct_test()
     /*** Initialization sequence begin ***/
    
     // Step 1. Initialize and save the handle the function returns
-    struct meta_my_struct_t handle = linked_list_my_struct_t_initialize();
-    struct meta_my_struct_t *h = &handle;
+    struct handle_my_struct_t handle = linked_list_my_struct_t_initialize();
+    struct handle_my_struct_t *h = &handle;
 
     // Step 2. Set the handle's 'free()' and 'deepcopy()' with designated functions
     linked_list_my_struct_t_set_free_func(h, _my_struct_free);
@@ -203,8 +203,8 @@ int my_struct_test()
     linked_list_my_struct_t_traverse(h, _print_node);
 
     // Create new linked list
-    struct meta_my_struct_t handle2 = linked_list_my_struct_t_initialize();
-    struct meta_my_struct_t *h2 = &handle2;
+    struct handle_my_struct_t handle2 = linked_list_my_struct_t_initialize();
+    struct handle_my_struct_t *h2 = &handle2;
 
     my_struct_t dd = { .a = 32, .b = -12 };
     for (int i = 0; i < 10; i++)
