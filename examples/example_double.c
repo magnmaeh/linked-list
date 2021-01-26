@@ -192,7 +192,7 @@ int double_test()
     linked_list_double_traverse(h, _print_node);
 
     double out_new_data = linked_list_double_peek(h);
-    if (!_cmp_eq(&out_new_data, &data))
+    if (!_cmp_eq(&out_new_data, &data2))
         printf("Peek failed!\n");
     
     out_new_data = linked_list_double_get_at_pos(h, 1);
@@ -204,7 +204,7 @@ int double_test()
         printf("get at pos failed\n");
     
     out_new_data = linked_list_double_get_at_pos(h, 0);
-    if (!_cmp_eq(&out_new_data, &data))
+    if (!_cmp_eq(&out_new_data, &data2))
         printf("get at pos failed\n");
 
     out_new_data = linked_list_double_get_at_pos(h, 5);
