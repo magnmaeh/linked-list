@@ -19,12 +19,6 @@
 #define LINKED_LIST_DECLARATIONS_H
 
 #define LINKED_LIST_MAX_LENGTH  20
-#define LINKED_LIST_MAX_LISTS   3
-
-typedef struct {
-    int a;
-    int b;
-} my_struct;
 
 #define LINKED_LIST_GENERIC_DEFINE_NODE(type) \
 struct node_##type \
